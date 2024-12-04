@@ -10,7 +10,7 @@ SMSMSASXSS
 SAXAMASAAA
 MAMMMXMMMM
 MXMXAXMASX""", '\n', keepempty=false)
-#input = readlines("input4")
+input = readlines("input4")
 
 function part1(input)
   # What is going on with the function scope??
@@ -72,16 +72,11 @@ function part2(input)
     if input[i, j] != 'A'
       continue
     end
-    dirs = [
-      ((-1, -1), (-1, 1)),
-      ((-1, 1), (1, 1)),
-      ((1, 1), (1, -1)),
-      ((1, -1), (-1, -1))
-    ]
-    for d in dirs
-      if 'M' == input[(i, j).+d[1]] == input[(i, j).+d[2]]
-        total += 1
-      end
+    dirs = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+    locs = [input[i+d[1], j+d[2]] for d in dirs]
+    if count(c -> c == 'S', locs) == count(c -> c == 'M', locs) == 2 &&
+       locs[1] != locs[4]
+      total += 1
     end
   end
   return total
