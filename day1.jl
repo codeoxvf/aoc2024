@@ -1,21 +1,21 @@
 using StatsBase
 
-lines = readlines("input1")
+input = readlines("input1")
 
-function part1(lines)
-  lines = hcat(map(l -> parse.(Int, l), split.(lines))...)
-  sort!(lines; dims=2)
+function part1(input)
+  input = hcat(map(l -> parse.(Int, l), split.(input))...)
+  sort!(input; dims=2)
 
-  distances = abs.(lines[1, :] - lines[2, :])
+  distances = abs.(input[1, :] - input[2, :])
   println(sum(distances))
 end
 
-function part2(lines)
+function part2(input)
   similarity = 0
-  lines = hcat(map(l -> parse.(Int, l), split.(lines))...)
-  cm = countmap(lines[2, :])
+  input = hcat(map(l -> parse.(Int, l), split.(input))...)
+  cm = countmap(input[2, :])
 
-  for n in lines[1, :]
+  for n in input[1, :]
     if haskey(cm, n)
       similarity += cm[n] * n
     end
@@ -24,4 +24,4 @@ function part2(lines)
   println(similarity)
 end
 
-part2(lines)
+part2(input)
