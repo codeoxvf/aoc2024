@@ -3,6 +3,8 @@ input = split("""
 input = readlines("input")
 
 function part1(input)
+  input = [parse.(Int, i) for i in collect.(input)]
+  input = permutedims(reduce(hcat, input))
   return
 end
 
