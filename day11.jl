@@ -53,27 +53,36 @@ function part1(input)
 end
 
 function part2(input)
-  #=function step(stones)
-    replace!(stones, 0 => 1)
-    replace!(stones) do s
-      if length(string(s)) % 2 != 0 && s != 1
-        2024s
+  function step(stones)
+    nstones = typeof(stones)()
+
+    foreach(keys(stones)) do i
+      i == 0 && return
+
+      s = string(i)
+      if length(s) % 2 == 0
+        a = parse(Int, s[1:length(s)÷2])
+        b = parse(Int, s[length(s)÷2+1:end])
+        nstones[a] = get(nstones, a, 0) + stones[i]
+        nstones[b] = get(nstones, b, 0) + stones[i]
       else
-        s
+        nstones[2024i] = get(nstones, 2024i, 0) + stones[i]
       end
     end
-    i = 0
-    while !isnothing(i)
-      i = findnext(s -> length(string(s)) % 2 == 0, stones, i + 1)
-      d = string(stones[i])
-      n = length(d) ÷ 2
-      stones[i] = parse(Int, d[begin:n])
-      insert!(stones, i + 1, parse(Int, d[n+1:end]))
-    end
+
+    nstones[1] = get(nstones, 1, 0) + get(stones, 0, 0)
+
+    return nstones
   end
 
-  input = [parse.(Int, i) for i in split(input, ' ')]
-  stones = zeros(Int, length(input))=#
+  input = map(i -> parse(Int, i), split(input, ' '))
+  stones = Dict(map(i -> i => count(x -> x == i, input), unique(input)))
+
+  for _ in 1:75
+    stones = step(stones)
+  end
+
+  sum(x -> x[2], stones)
 end
 
 println(part2(input))
