@@ -1,5 +1,3 @@
-using Plots
-
 input = split("""p=0,4 v=3,-3
 p=6,3 v=-1,-3
 p=10,3 v=-1,2
@@ -59,21 +57,36 @@ function part2(input)
     for i in axes(robots, 1)
       grid[(robots[i, 2:-1:1] .+ 1)...] += 1
     end
-    plot(robots[:, 1], robots[:, 2])
+    for i in axes(grid, 1)
+      [print(j) for j in grid[i, :]]
+      println()
+    end
   end
 
   m = 101
   n = 103
+  #m = 11
+  #n = 7
   robots = Matrix{Int}(undef, length(input), 4)
   for (i, l) in pairs(input)
     robots[i, :] = parse.(Int, match(r"p=(.+),(.+) v=(.+),(.+)", l).captures)
   end
 
-  @gif for _ in 1:10000
+  for s in 1:10000
     robots[:, 1] = constrain.(robots[:, 1] .+ robots[:, 3], m)
     robots[:, 2] = constrain.(robots[:, 2] .+ robots[:, 4], n)
-    scatter(robots[:, 1], robots[:, 2])
-  end every 10
+
+    grid = zeros(Int, n, m)
+    for i in axes(robots, 1)
+      grid[(robots[i, 2:-1:1] .+ 1)...] += 1
+    end
+
+    if all(grid .< 2)
+      displayrobots(robots, m, n)
+      println(s, " seconds")
+      return
+    end
+  end
 end
 
 part2(input)
