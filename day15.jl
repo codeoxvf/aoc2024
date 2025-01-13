@@ -1,14 +1,4 @@
-input = split("""########
-#..O.O.#
-##@.O..#
-#...O..#
-#.#.O..#
-#...O..#
-#......#
-########
-
-<^^>>>vv<v>>v<<""", "\n\n", keepempty=true)
-input = split("""##########
+example = split("""##########
 #..O..O.O#
 #......O.#
 #.OO..O.O#
@@ -28,9 +18,18 @@ vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
 >^>>^v>vv>^<<^v<>><<><<v<<v><>v<^vv<<<>^^v^>^^>>><<^v>>v^v><^^>>^<>vv^
 <><^^>^^^<><vvvvv^v<v<<>^v<v>v<<^><<><<><<<^^<<<^<<>><<><^^^>^^<>^>v<>
 ^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
-v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^""", "\n\n")
-#input = readlines("input15")
-#input = split(read("input15", String), "\n\n")
+v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^
+""", "\n\n")
+example2 = split("""#######
+#...#.#
+#.....#
+#..OO@#
+#..O..#
+#.....#
+#######
+
+<vv<<^^<<^^""", "\n\n")
+input = split(read("input15", String), "\n\n")
 
 function part1(input)
   function checkstep!(grid, dir, x, y)
@@ -73,44 +72,75 @@ function part1(input)
 end
 
 function part2(input)
-  function checkstep!(grid, dir, x, y)
+  function step!(grid, move)
     dirs = Dict(
-      '^' => (-1, 0),
-      '>' => (0, 1),
-      'v' => (1, 0),
-      '<' => (0, -1))
-    ny, nx = (y, x) .+ dirs[dir]
-    grid[ny, nx] == '#' && return false
+      '^' => CartesianIndex(-1, 0),
+      '>' => CartesianIndex(0, 1),
+      'v' => CartesianIndex(1, 0),
+      '<' => CartesianIndex(0, -1))
+    robot = findfirst(x -> x == '@', grid)
+    adj = robot + dirs[move]
 
-    if dir == '>' || dir == '<'
-      if grid[ny, nx] == '.' || check(grid, dir, nx, ny)
-        grid[ny, nx] = grid[y, x]
-        grid[y, x] = '.'
-        return true
+    grid[adj] == '#' && return
+
+    if grid[adj] == '.'
+      grid[adj] = grid[robot]
+      grid[robot] = '.'
+      return
+    end
+
+    if move ∈ "<>"
+      boxes = zeros(Bool, size(grid))
+      boxes[robot] = true
+      boxes[adj] = true
+      check = adj + dirs[move]
+      while grid[check] != '#'
+        if grid[check] == '.'
+          moveboxes!(grid, boxes, dirs[move])
+          break
+        end
+        boxes[check] = true
+        check += dirs[move]
       end
-      return false
+    else
+      moveboxesvert!(grid, robot, dirs[move])
     end
-
-    # ^v
-    grid[ny, nx] == '.' && return true
-    # []
-    side = Dict(']' => -1, '[' => 1)
-    half = (ny, nx + side[grid[ny, nx]])
-    if grid[(ny, nx) .+ dirs[dir]...] == '.' &&
-       grid[half .+ dirs[dir]...] == '.'
-      grid[(ny, nx) .+ dirs[dir]...] = grid[ny, nx]
-      grid[half .+ dirs[dir]...] = grid[half...]
-      return true
-    end
-    if check(grid, dir, nx, ny) && check(grid, dir, nx + side[grid[ny, nx]], ny)
-      return true
-    end
-    return false
   end
 
-  function movevert!(grid, dir, x, y)
-    y, x = Tuple(findfirst(x -> x == '@', grid))
-    check(grid, dir, x, y) || return
+  function moveboxesvert!(grid, pos, dir)
+    boxes = zeros(Bool, size(grid))
+    boxes[pos] = true
+    queue = [pos]
+    while !isempty(queue)
+      curr = popfirst!(queue)
+
+      if grid[curr] ∈ "[]"
+        otherhalf =
+          curr + (grid[curr] == '[' ?
+                  CartesianIndex(0, 1) : CartesianIndex(0, -1))
+        if !boxes[otherhalf]
+          boxes[otherhalf] = true
+          push!(queue, otherhalf)
+        end
+      end
+
+      adj = curr + dir
+      grid[adj] == '#' && return
+      if grid[adj] ∈ "[]"
+        boxes[adj] = true
+        push!(queue, adj)
+      end
+    end
+
+    moveboxes!(grid, boxes, dir)
+  end
+
+  function moveboxes!(grid, boxes, dir)
+    buffer = copy(grid)
+    grid[boxes] .= '.'
+    foreach(findall(identity, boxes)) do x
+      grid[x+dir] = buffer[x]
+    end
   end
 
   function displaygrid(grid)
@@ -120,29 +150,22 @@ function part2(input)
     end
   end
 
-  dirs = replace(input[2], "\n" => "")
-  input = split(input[1], '\n')
-  input = permutedims(reduce(hcat, collect.(input)))
-  grid = similar(input, size(input, 1), 2size(input, 2))
-  stretch = Dict(
-    '#' => "##",
-    '.' => "..",
-    'O' => "[]",
-    '@' => "@."
-  )
-  for (y, x) in Tuple.(keys(input))
-    grid[y, 2x-1:2x] = collect(stretch[input[y, x]])
-  end
+  moves = replace(input[2], "\n" => "")
+  lines = split(
+    replace(input[1],
+      '#' => "##", '.' => "..", 'O' => "[]", '@' => "@."),
+    '\n')
+  grid = permutedims(reduce(hcat, collect.(lines)))
 
-  for d in dirs
-    y, x = Tuple(findfirst(x -> x == '@', grid))
-    checkstep!(grid, d, x, y)
+  for move in moves
+    step!(grid, move)
   end
   displaygrid(grid)
 
-  return sum(Tuple.(findall(x -> x == '[', grid))) do (y, x)
-    return 100(y - 1) + x - 1
+  return sum(findall(x -> x == '[', grid)) do pos
+    y, x = Tuple(pos)
+    100(y - 1) + x - 1
   end
 end
 
-println(part2(input))
+part2(input)

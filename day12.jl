@@ -56,6 +56,7 @@ function part1(input)
 end
 
 function part2(input)
+  # number of EDGES is the same as number of CORNERS for a 2D shape
   function getcornermap(grid)
     cornermap = zeros(Int, size(grid))
     for pos in Tuple.(eachindex(IndexCartesian(), grid))
