@@ -67,36 +67,41 @@ function part1(input)
 end
 
 function part2(input)
-  netmap = Dict()
-  for m in eachmatch(r"(..)-(..)", input)
-    c = m.captures
-    if c[1] ∈ keys(netmap)
-      push!(netmap[c[1]], c[1], c[2])
-    else
-      netmap[c[1]] = Set([c[1], c[2]])
+  function getnetworkgraph(netmap)
+    graph = Dict()
+    for m in eachmatch(r"(..)-(..)", netmap)
+      c = m.captures
+      if c[1] ∈ keys(graph)
+        push!(graph[c[1]], c[2])
+      else
+        graph[c[1]] = Set([c[2]])
+      end
+      if c[2] ∈ keys(graph)
+        push!(graph[c[2]], c[1])
+      else
+        graph[c[2]] = Set([c[1]])
+      end
     end
-    if c[2] ∈ keys(netmap)
-      push!(netmap[c[2]], c[1], c[2])
-    else
-      netmap[c[2]] = Set([c[1], c[2]])
+    return graph
+  end
+
+  function bronkerbosch!(graph, R, P, X, output)
+    if isempty(P) && isempty(X)
+      push!(output, R)
+    end
+
+    foreach(P) do v
+      bronkerbosch!(graph, R ∪ Set([v]), P ∩ graph[v], X ∩ graph[v], output)
+      delete!(P, v)
+      push!(X, v)
     end
   end
 
-  largestset = Set()
-  for connections in values(netmap),
-    currsubset in combinations(collect(connections))
-
-    if length(currsubset) < max(3, length(largestset))
-      continue
-    end
-
-    connectedsubset = Set(reduce(∩, [netmap[c] for c in currsubset]))
-    if length(connectedsubset) > length(largestset)
-      largestset = connectedsubset
-    end
-  end
-
-  println(join(sort(collect(largestset)), ','))
+  graph = getnetworkgraph(input)
+  output = []
+  bronkerbosch!(graph, Set(), Set(keys(graph)), Set(), output)
+  lanparty = argmax(length, output)
+  return println(join(sort(collect(lanparty)), ','))
 end
 
 part2(input)
